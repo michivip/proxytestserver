@@ -8,6 +8,7 @@ import (
 
 func StartWebserver(addr string) *http.Server {
 	router := mux.NewRouter()
+	router.HandleFunc("/headers", EndpointRequestHeaders)
 	server := &http.Server{
 		Handler: router,
 		Addr:    addr,
