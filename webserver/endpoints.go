@@ -61,9 +61,7 @@ func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse) 
 }
 
 func parseIp(input string) (ip string) {
-	if ipBytes := net.ParseIP(input); ipBytes != nil {
-		return ipBytes.String()
-	} else if addresses, err := net.LookupHost(input); err != nil && len(addresses) > 0 {
+	if addresses, err := net.LookupHost(input); err != nil && len(addresses) > 0 {
 		return addresses[0]
 	} else if host, _, err := net.SplitHostPort(input); err == nil {
 		if addresses, err := net.LookupHost(host); err == nil && len(addresses) > 0 {
