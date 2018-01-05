@@ -15,9 +15,9 @@ var proxyHeaders = []string{
 }
 
 type CheckProxyResponse struct {
-	IsProxy              bool        `json:"is_proxy"`
-	ProxyHeaders         http.Header `json:"proxy_headers"`
-	SuspectedRealAddress string      `json:"suspected_real_address"`
+	IsProxy                bool            `json:"is_proxy"`
+	ProxyHeaders           http.Header     `json:"proxy_headers"`
+	SuspectedRealAddresses map[string]*int `json:"suspected_real_address"`
 }
 
 func EndpointCheckProxy(writer http.ResponseWriter, req *http.Request) {
@@ -25,16 +25,13 @@ func EndpointCheckProxy(writer http.ResponseWriter, req *http.Request) {
 		IsProxy:      false,
 		ProxyHeaders: http.Header{},
 	}
-	suspectedAddresses := fetchSuspectedIPAddresses(req, response)
+	response.SuspectedRealAddresses = fetchSuspectedIPAddresses(req, response)
 	remoteIpString := req.RemoteAddr[:strings.LastIndex(req.RemoteAddr, ":")]
-	var maximum int
-	for address, count := range suspectedAddresses {
-		if maximum < *count && address != remoteIpString {
-			response.SuspectedRealAddress = address
-		}
-	}
-	if response.SuspectedRealAddress == "" {
-		response.SuspectedRealAddress = remoteIpString
+	if amount, ok := response.SuspectedRealAddresses[remoteIpString]; ok {
+		*amount += 1
+	} else {
+		defaultValue := 1
+		response.SuspectedRealAddresses[remoteIpString] = &defaultValue
 	}
 	writeJsonResponse(writer, req, response)
 }
