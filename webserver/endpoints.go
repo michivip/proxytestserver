@@ -2,9 +2,9 @@ package webserver
 
 import (
 	"net/http"
-	"net"
 	"strings"
 	"log"
+	"regexp"
 )
 
 var proxyHeaders = []string{
@@ -13,6 +13,8 @@ var proxyHeaders = []string{
 	// http variables
 	"Http_forwarded", "Http-Forwarded", "Http_x_forwarded_for", "Http_client_ip", "Http_via", "Http_proxy_connection", "Http_proxy_connection", "Http-X-Forwarded-For", "Http-Client-Ip",
 }
+
+var ipRegex = regexp.MustCompile(`(?:(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|(?:(?:(?:[0-9A-Fa-f]{1,4}:){7}(?:[0-9A-Fa-f]{1,4}|:))|(?:(?:[0-9A-Fa-f]{1,4}:){6}(?::[0-9A-Fa-f]{1,4}|(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){5}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,2})|:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){4}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,3})|(?:(?::[0-9A-Fa-f]{1,4})?:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){3}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,4})|(?:(?::[0-9A-Fa-f]{1,4}){0,2}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){2}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,5})|(?:(?::[0-9A-Fa-f]{1,4}){0,3}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:)(?:(?:(?::[0-9A-Fa-f]{1,4}){1,6})|(?:(?::[0-9A-Fa-f]{1,4}){0,4}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?::(?:(?:(?::[0-9A-Fa-f]{1,4}){1,7})|(?:(?::[0-9A-Fa-f]{1,4}){0,5}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(?:%.+)?s*)`)
 
 type CheckProxyResponse struct {
 	IsProxy                bool            `json:"is_proxy"`
@@ -39,41 +41,24 @@ func EndpointCheckProxy(writer http.ResponseWriter, req *http.Request) {
 func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse) (suspectedAddresses map[string]*int) {
 	log.Printf("Proxy check from: %v\n", req.Header)
 	suspectedAddresses = make(map[string]*int, 0)
-	for _, proxyHeader := range proxyHeaders {
-		if value, ok := req.Header[proxyHeader]; ok {
+	for header, headerValue := range req.Header {
+		for _, proxyHeader := range proxyHeaders {
+			if proxyHeader != header {
+				continue
+			}
 			response.ProxyHeaders[proxyHeader] = req.Header[proxyHeader]
 			if !response.IsProxy {
 				response.IsProxy = true
 			}
-			if len(value) == 1 {
-				if ips := parseIps(value[0]); len(ips) > 0 {
-					for _, ip := range ips {
-						if value, ok := suspectedAddresses[ip]; ok {
-							*value += 1
-						} else {
-							initialValue := 1
-							suspectedAddresses[ip] = &initialValue
-						}
+			for _, valueElem := range headerValue {
+				for _, foundIp := range ipRegex.FindAllString(valueElem, -1) {
+					if mapIp, ok := suspectedAddresses[foundIp]; ok {
+						*mapIp += 1
+					} else {
+						var initialCount = 1
+						suspectedAddresses[foundIp] = &initialCount
 					}
 				}
-			}
-		}
-	}
-	return
-}
-
-func parseIps(input string) (ip []string) {
-	if addresses, err := net.LookupHost(input); err != nil && len(addresses) > 0 {
-		return addresses
-	} else if host, _, err := net.SplitHostPort(input); err == nil {
-		if addresses, err := net.LookupHost(host); err == nil && len(addresses) > 0 {
-			return addresses
-		}
-	} else {
-		split := strings.Split(input, " ")
-		for _, elem := range split {
-			if ip = parseIps(elem); len(ip) != 0 {
-				return ip
 			}
 		}
 	}
