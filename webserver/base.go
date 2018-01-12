@@ -8,12 +8,31 @@ import (
 	"github.com/michivip/proxytestserver/config"
 )
 
+type ReverseProxyHandler struct {
+	ReverseProxyHeader string
+	RealHandler        http.Handler
+}
+
+func (handler *ReverseProxyHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	request.RemoteAddr = request.Header.Get(handler.ReverseProxyHeader)
+	handler.RealHandler.ServeHTTP(writer, request)
+}
+
 func StartWebserver(config *config.Configuration) *http.Server {
 	router := mux.NewRouter()
 	router.HandleFunc("/headers", EndpointRequestHeaders())
 	router.HandleFunc("/proxycheck", EndpointCheckProxy(config))
+	var handler http.Handler
+	if config.ReverseProxyHeader != "" {
+		handler = &ReverseProxyHandler{
+			ReverseProxyHeader: config.ReverseProxyHeader,
+			RealHandler:        router,
+		}
+	} else {
+		handler = router
+	}
 	server := &http.Server{
-		Handler: router,
+		Handler: handler,
 		Addr:    config.Address,
 	}
 	go func() {
