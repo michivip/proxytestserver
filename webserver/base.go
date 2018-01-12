@@ -5,17 +5,16 @@ import (
 	"net/http"
 	"log"
 	"encoding/json"
-	"sort"
+	"github.com/michivip/proxytestserver/config"
 )
 
-func StartWebserver(addr string) *http.Server {
+func StartWebserver(config *config.Configuration) *http.Server {
 	router := mux.NewRouter()
-	router.HandleFunc("/headers", EndpointRequestHeaders)
-	sort.Strings(proxyHeaders)
-	router.HandleFunc("/proxycheck", EndpointCheckProxy)
+	router.HandleFunc("/headers", EndpointRequestHeaders())
+	router.HandleFunc("/proxycheck", EndpointCheckProxy(config))
 	server := &http.Server{
 		Handler: router,
-		Addr:    addr,
+		Addr:    config.Address,
 	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
