@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"log"
 	"encoding/json"
+	"sort"
 )
 
 func StartWebserver(addr string) *http.Server {
 	router := mux.NewRouter()
 	router.HandleFunc("/headers", EndpointRequestHeaders)
+	sort.Strings(proxyHeaders)
 	router.HandleFunc("/proxycheck", EndpointCheckProxy)
 	server := &http.Server{
 		Handler: router,
