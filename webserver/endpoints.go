@@ -33,7 +33,7 @@ func EndpointCheckProxy(config *config.Configuration) func(http.ResponseWriter, 
 			http.Error(writer, "431 request header fields too large", http.StatusRequestHeaderFieldsTooLarge)
 			return
 		}
-		remoteIpString := request.RemoteAddr[:strings.LastIndex(request.RemoteAddr, ":")-1]
+		remoteIpString := request.RemoteAddr[:strings.LastIndex(request.RemoteAddr, ":")]
 		if amount, ok := response.SuspectedRealAddresses[remoteIpString]; ok {
 			*amount += 1
 		} else {
