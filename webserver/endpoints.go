@@ -5,6 +5,7 @@ import (
 	"strings"
 	"log"
 	"regexp"
+	"fmt"
 )
 
 var proxyHeaders = []string{
@@ -22,12 +23,19 @@ type CheckProxyResponse struct {
 	SuspectedRealAddresses map[string]*int `json:"suspected_real_address"`
 }
 
+var ErrMaximumHeaderLengthExceeded = fmt.Errorf("the maximum header length (%d) has been exceeded", MaximumHeaderLength)
+
 func EndpointCheckProxy(writer http.ResponseWriter, req *http.Request) {
 	response := &CheckProxyResponse{
 		IsProxy:      false,
 		ProxyHeaders: http.Header{},
 	}
-	response.SuspectedRealAddresses = fetchSuspectedIPAddresses(req, response)
+	var err error
+	response.SuspectedRealAddresses, err = fetchSuspectedIPAddresses(req, response)
+	if err == ErrMaximumHeaderLengthExceeded {
+		http.Error(writer, "431 request header fields too large", http.StatusRequestHeaderFieldsTooLarge)
+		return
+	}
 	remoteIpString := req.RemoteAddr[:strings.LastIndex(req.RemoteAddr, ":")]
 	if amount, ok := response.SuspectedRealAddresses[remoteIpString]; ok {
 		*amount += 1
@@ -38,31 +46,45 @@ func EndpointCheckProxy(writer http.ResponseWriter, req *http.Request) {
 	writeJsonResponse(writer, req, response)
 }
 
-func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse) (suspectedAddresses map[string]*int) {
+const (
+	MaximumHeaderLength = 128
+)
+
+func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse) (suspectedAddresses map[string]*int, err error) {
 	log.Printf("Proxy check from: %v\n", req.Header)
 	suspectedAddresses = make(map[string]*int, 0)
 	for header, headerValue := range req.Header {
 		for _, proxyHeader := range proxyHeaders {
-			if proxyHeader != header {
-				continue
-			}
-			response.ProxyHeaders[proxyHeader] = req.Header[proxyHeader]
-			if !response.IsProxy {
-				response.IsProxy = true
-			}
-			for _, valueElem := range headerValue {
-				for _, foundIp := range ipRegex.FindAllString(valueElem, -1) {
-					if mapIp, ok := suspectedAddresses[foundIp]; ok {
-						*mapIp += 1
-					} else {
-						var initialCount = 1
-						suspectedAddresses[foundIp] = &initialCount
-					}
-				}
+			if err = checkProxyRequestHeader(headerValue, proxyHeader, header, response, req, suspectedAddresses); err != nil {
+				return
 			}
 		}
 	}
 	return
+}
+
+func checkProxyRequestHeader(headerValue []string, proxyHeader string, header string, response *CheckProxyResponse, req *http.Request, suspectedAddresses map[string]*int) error {
+	for _, valueElem := range headerValue {
+		if len(valueElem) > MaximumHeaderLength {
+			return ErrMaximumHeaderLengthExceeded
+		}
+		if proxyHeader != header {
+			continue
+		}
+		response.ProxyHeaders[proxyHeader] = req.Header[proxyHeader]
+		if !response.IsProxy {
+			response.IsProxy = true
+		}
+		for _, foundIp := range ipRegex.FindAllString(valueElem, -1) {
+			if mapIp, ok := suspectedAddresses[foundIp]; ok {
+				*mapIp += 1
+			} else {
+				var initialCount = 1
+				suspectedAddresses[foundIp] = &initialCount
+			}
+		}
+	}
+	return nil
 }
 
 func EndpointRequestHeaders(writer http.ResponseWriter, req *http.Request) {
