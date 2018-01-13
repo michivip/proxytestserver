@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"github.com/michivip/proxytestserver/config"
 	"errors"
+	"log"
 )
 
 type CheckProxyResponse struct {
@@ -19,7 +20,7 @@ var ErrMaximumHeaderLengthExceeded = errors.New("the maximum header length has b
 func EndpointCheckProxy(config *config.Configuration) func(http.ResponseWriter, *http.Request) {
 	ipRegex, err := regexp.Compile(config.IpRegex)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	return func(writer http.ResponseWriter, request *http.Request) {
 		response := &CheckProxyResponse{

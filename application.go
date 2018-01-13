@@ -12,7 +12,16 @@ import (
 
 func main() {
 	configurationFilePath := flag.String("config", "config.toml", "The path to your custom configuration file.")
+	logFilePath := flag.String("logfile", "", "The path to the log file (if empty, nothing will be logged).")
 	flag.Parse()
+	if *logFilePath != "" {
+		file, err := os.Create(*logFilePath)
+		if err != nil {
+			log.Panic(err)
+		}
+		defer file.Close()
+		log.SetOutput(file)
+	}
 	var configLoader config.Loader
 	configLoader = &config.TomlLoader{
 		Filename: *configurationFilePath,
@@ -21,15 +30,15 @@ func main() {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err = configLoader.Save(config.DefaultConfiguration); err != nil {
-				panic(err)
+				log.Panic(err)
 			} else {
 				log.Fatalln("Created the configuration file for the first time. Please adjust your values and restart the application.")
 			}
 		} else {
-			panic(err)
+			log.Panic(err)
 		}
 	}
-	log.Printf("Starting proxytestserver on %v...", configuration.Address)
+	log.Printf("Starting proxytestserver on %v...\n", configuration.Address)
 	server := webserver.StartWebserver(configuration)
 	log.Println("Started webserver. Enter \"close\" to shutdown the webserver.")
 	scanner := bufio.NewScanner(os.Stdin)
