@@ -8,6 +8,7 @@ import (
 	"strings"
 	"flag"
 	"github.com/michivip/proxytestserver/config"
+	"io"
 )
 
 func main() {
@@ -20,7 +21,8 @@ func main() {
 			log.Panic(err)
 		}
 		defer file.Close()
-		log.SetOutput(file)
+		consoleOutput := io.MultiWriter(os.Stdout, file)
+		log.SetOutput(consoleOutput)
 	}
 	var configLoader config.Loader
 	configLoader = &config.TomlLoader{
