@@ -1,4 +1,4 @@
-# proxytestserver
+# proxytestserver [![Build Status](https://travis-ci.org/michivip/proxytestserver.svg?branch=master)](https://travis-ci.org/michivip/proxytestserver)
 A simple webserver to determine a proxy's type written in Golang.
 # Installation
 ## Download executable binary
