@@ -22,7 +22,7 @@ go build
 - **proxy_headers**: A slice of headers which should be checked on /proxycheck (default: most common http/proxy redirection headers) 
 - **ip_regex**: The regular expression which searches the headers for ip addresses (default: a regex which searches for ipv4/ipv6).
 - **maximum_header_length**: The maximum amount of characters in a header value (to prevent attacks) (default: `128`)
-- **reverse_proxy_header**: The header name for a reverse proxy which contains the real ip address in the format <ADDR>:<PORT> - if empty, no real address will be fetched (default: empty)
+- **reverse_proxy_header**: The header name for a reverse proxy which contains the real ip address in the format `<ADDR>:<PORT>` - if empty, no real address will be fetched (default: empty)
 
 # Contributing
 If you want to contribute, just open an issue. Then your issue will be discussed.
