@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/michivip/proxytestserver/webserver"
-	"log"
 	"bufio"
-	"os"
-	"strings"
 	"flag"
 	"github.com/michivip/proxytestserver/config"
+	"github.com/michivip/proxytestserver/webserver"
 	"io"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {

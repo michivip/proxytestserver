@@ -1,12 +1,12 @@
 package webserver
 
 import (
-	"net/http"
-	"strings"
-	"regexp"
-	"github.com/michivip/proxytestserver/config"
 	"errors"
+	"github.com/michivip/proxytestserver/config"
 	"log"
+	"net/http"
+	"regexp"
+	"strings"
 )
 
 type CheckProxyResponse struct {
