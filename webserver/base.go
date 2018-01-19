@@ -1,11 +1,11 @@
 package webserver
 
 import (
-	"github.com/gorilla/mux"
-	"net/http"
-	"log"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/michivip/proxytestserver/config"
+	"log"
+	"net/http"
 	"strconv"
 )
 

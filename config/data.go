@@ -2,7 +2,7 @@ package config
 
 type Loader interface {
 	Load() (*Configuration, error)
-	Save(*Configuration) (error)
+	Save(*Configuration) error
 }
 
 type Configuration struct {
