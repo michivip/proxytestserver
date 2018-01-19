@@ -1,4 +1,4 @@
-# proxytestserver [![Build Status](https://travis-ci.org/michivip/proxytestserver.svg?branch=master)](https://travis-ci.org/michivip/proxytestserver)
+# proxytestserver [![Build Status](https://travis-ci.org/michivip/proxytestserver.svg?branch=master)](https://travis-ci.org/michivip/proxytestserver) [![Go Report Card](https://goreportcard.com/badge/github.com/michivip/proxytestserver)](https://goreportcard.com/report/github.com/michivip/proxytestserver) [![License Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg?maxAge=31622400)](https://www.apache.org/licenses/LICENSE-2.0)
 A simple webserver to determine a proxy's type written in Golang.
 # Installation
 ## Download executable binary
