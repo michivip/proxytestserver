@@ -1,8 +1,8 @@
 package config
 
 import (
-	"os"
 	"github.com/BurntSushi/toml"
+	"os"
 )
 
 type TomlLoader struct {
