@@ -1,10 +1,12 @@
 package config
 
+// General configuration loader interface to allow custom implementations.
 type Loader interface {
 	Load() (*Configuration, error)
-	Save(*Configuration) (error)
+	Save(*Configuration) error
 }
 
+// Struct with values and struct tags to encode/decode the configuration file.
 type Configuration struct {
 	Address             string   `toml:"address"`
 	ProxyHeaders        []string `toml:"proxy_headers"`
@@ -13,6 +15,7 @@ type Configuration struct {
 	ReverseProxyHeader  string   `toml:"reverse_proxy_header"`
 }
 
+// The configuration struct with default value which are saved if no existing configuration file can be found.
 var DefaultConfiguration = &Configuration{
 	Address: "localhost:8070",
 	ProxyHeaders: []string{
