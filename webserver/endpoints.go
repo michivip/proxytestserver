@@ -9,21 +9,22 @@ import (
 	"strings"
 )
 
-type CheckProxyResponse struct {
+type checkProxyResponse struct {
 	IsProxy                bool            `json:"is_proxy"`
 	ProxyHeaders           http.Header     `json:"proxy_headers"`
 	SuspectedRealAddresses map[string]*int `json:"suspected_real_address"`
 }
 
+// this error is returned if a header exceeds the maximum length as defined in the configuration.
 var ErrMaximumHeaderLengthExceeded = errors.New("the maximum header length has been exceeded")
 
-func EndpointCheckProxy(config *config.Configuration) func(http.ResponseWriter, *http.Request) {
+func endpointCheckProxy(config *config.Configuration) func(http.ResponseWriter, *http.Request) {
 	ipRegex, err := regexp.Compile(config.IpRegex)
 	if err != nil {
 		log.Panic(err)
 	}
 	return func(writer http.ResponseWriter, request *http.Request) {
-		response := &CheckProxyResponse{
+		response := &checkProxyResponse{
 			IsProxy:      false,
 			ProxyHeaders: http.Header{},
 		}
@@ -45,7 +46,7 @@ func EndpointCheckProxy(config *config.Configuration) func(http.ResponseWriter, 
 	}
 }
 
-func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse, config *config.Configuration, ipRegex *regexp.Regexp) (suspectedAddresses map[string]*int, err error) {
+func fetchSuspectedIPAddresses(req *http.Request, response *checkProxyResponse, config *config.Configuration, ipRegex *regexp.Regexp) (suspectedAddresses map[string]*int, err error) {
 	suspectedAddresses = make(map[string]*int, 0)
 	for header, headerValue := range req.Header {
 		for _, proxyHeader := range config.ProxyHeaders {
@@ -57,7 +58,7 @@ func fetchSuspectedIPAddresses(req *http.Request, response *CheckProxyResponse, 
 	return
 }
 
-func checkProxyRequestHeader(headerValue []string, proxyHeader string, header string, response *CheckProxyResponse, req *http.Request, suspectedAddresses map[string]*int, maximumHeaderLength int, ipRegex *regexp.Regexp) error {
+func checkProxyRequestHeader(headerValue []string, proxyHeader string, header string, response *checkProxyResponse, req *http.Request, suspectedAddresses map[string]*int, maximumHeaderLength int, ipRegex *regexp.Regexp) error {
 	for _, valueElem := range headerValue {
 		if len(valueElem) > maximumHeaderLength {
 			return ErrMaximumHeaderLengthExceeded
@@ -81,7 +82,7 @@ func checkProxyRequestHeader(headerValue []string, proxyHeader string, header st
 	return nil
 }
 
-func EndpointRequestHeaders() func(http.ResponseWriter, *http.Request) {
+func endpointRequestHeaders() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writeJsonResponse(writer, request, request.Header)
 	}

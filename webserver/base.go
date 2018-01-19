@@ -9,12 +9,12 @@ import (
 	"strconv"
 )
 
-type ReverseProxyHandler struct {
+type reverseProxyHandler struct {
 	ReverseProxyHeader string
 	RealHandler        http.Handler
 }
 
-func (handler *ReverseProxyHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler *reverseProxyHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if handler.ReverseProxyHeader != "" {
 		request.RemoteAddr = request.Header.Get(handler.ReverseProxyHeader)
 	}
@@ -29,12 +29,13 @@ func (handler *ReverseProxyHandler) ServeHTTP(writer http.ResponseWriter, reques
 	handler.RealHandler.ServeHTTP(writer, request)
 }
 
+// this method asynchronous starts the web server with the provided configuration values. The server runs in the background but with the returned pointer, interaction with the server is given.
 func StartWebserver(config *config.Configuration) *http.Server {
 	router := mux.NewRouter()
-	router.HandleFunc("/headers", EndpointRequestHeaders())
-	router.HandleFunc("/proxycheck", EndpointCheckProxy(config))
+	router.HandleFunc("/headers", endpointRequestHeaders())
+	router.HandleFunc("/proxycheck", endpointCheckProxy(config))
 	server := &http.Server{
-		Handler: &ReverseProxyHandler{
+		Handler: &reverseProxyHandler{
 			ReverseProxyHeader: config.ReverseProxyHeader,
 			RealHandler:        router,
 		},
